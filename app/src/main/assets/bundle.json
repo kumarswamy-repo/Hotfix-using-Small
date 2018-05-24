@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "bundles": [
+    {
+      "uri": "login",
+      "type": "app",
+      "pkg": "com.kumar.applogin"
+    },
+    {
+      "uri": "signup",
+      "type": "app",
+      "pkg": "com.kumar.appsignup"
+    }
+  ]
+}
