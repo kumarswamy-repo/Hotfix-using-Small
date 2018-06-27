@@ -1,9 +1,15 @@
 package presentation;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -36,6 +42,8 @@ import domain.WelcomeMsgUsecase;
 
 public class MainActivity extends AppCompatActivity {
     TextView welocomeText = null;
+    private final int PERMISSIONS_REQUEST_STORAGE = 100;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +82,15 @@ public class MainActivity extends AppCompatActivity {
         updateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED){
+                    upgradeApp();
+                }
+                else {
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            PERMISSIONS_REQUEST_STORAGE);
+                }
 
             }
         });
@@ -88,6 +105,23 @@ public class MainActivity extends AppCompatActivity {
         WelcomeMsgRepositoryImpl welcomeMsgRepository = new WelcomeMsgRepositoryImpl();
         WelcomeMsgUsecase welcomeMsgUsecase = new WelcomeMsgUsecase(welcomeMsgRepository);
         welocomeText.setText(welcomeMsgUsecase.getWelcomeMessage());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case PERMISSIONS_REQUEST_STORAGE:{
+                if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED) {
+                    upgradeApp();
+                }
+                else
+                {
+                    Toast.makeText(MainActivity.this, "Enable storage permission to update App", Toast.LENGTH_SHORT ).show();
+                }
+                break;
+            }
+        }
     }
 
     private void upgradeApp(){
@@ -112,22 +146,22 @@ public class MainActivity extends AppCompatActivity {
 //  ]
 //                        }
 
-                File updateDir = new File(Environment.getExternalStorageDirectory()+File.separator+"Update Folder");
-                if(!updateDir.exists())
-                    return;
-
-                File patchFiles[] = updateDir.listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File file, String s) {
-                        String fileName = file.getName();
-                        if(fileName.startsWith("libcom_kumar") && fileName.endsWith(".so"))
-                            return true;
-                        return false;
-                    }
-                });
-
-                if(patchFiles.length == 0)
-                    return;
+//                File updateDir = new File(Environment.getExternalStorageDirectory()+File.separator+"Update Folder");
+//                if(!updateDir.exists())
+//                    return;
+//
+//                File patchFiles[] = updateDir.listFiles(new FilenameFilter() {
+//                    @Override
+//                    public boolean accept(File file, String s) {
+//                        String fileName = file.getName();
+//                        if(fileName.startsWith("libcom_kumar") && fileName.endsWith(".so"))
+//                            return true;
+//                        return false;
+//                    }
+//                });
+//
+//                if(patchFiles.length == 0)
+//                    return;
 
                 JSONObject jsonObject = new JSONObject();
                 try {
@@ -157,10 +191,10 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-                net.wequick.small.Bundle bundle = Small.getBundle("com.example.appmain");
+                net.wequick.small.Bundle bundle = Small.getBundle("com.kumar.applogin");
                 int versionCode = bundle.getVersionCode();
                 File parentFolder = bundle.getPatchFile().getParentFile();
-                File file = new File(parentFolder,"update_libcom_example_appmain.so");
+                File file = new File(parentFolder,"update_libcom_kumar_applogin.so");
 
                 if(file.exists())
                 {
@@ -172,9 +206,11 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
                 }
+                File updateFolder = new File(Environment.getExternalStorageDirectory()+File.separator+"Update Folder");
+                if(!updateFolder.exists())
+                    updateFolder.mkdir();
 
-
-                File inputFile = new File(Environment.getExternalStorageDirectory()+File.separator+"Update Folder"+File.separator+"libcom_example_appmain.so");
+                File inputFile = new File(updateFolder, "libcom_kumar_applogin.so");
                 if(!inputFile.exists())
                     return;
                 InputStream is = null;
@@ -224,5 +260,35 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode){
+            case KeyEvent.KEYCODE_BACK:{
+
+                if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED){
+
+                    net.wequick.small.Bundle bundle = Small.getBundle("com.kumar.applogin");
+                    File parentFolder = bundle.getPatchFile().getParentFile();
+                    File file = new File(parentFolder,"update_libcom_kumar_applogin.so");
+
+                    if(file.exists())
+                    {
+                        File destFile = new File(parentFolder,"libcom_kumar_applogin.so");
+                        boolean isRenamed = file.renameTo(destFile);
+                        if(isRenamed) {
+                            bundle.upgrade();
+                            Log.e("app:MainActiivty", "patch applied for applogin.so");
+                        }
+                        file = new File(parentFolder,"update_libcom_kumar_applogin.so");
+                        file.deleteOnExit();
+                    }
+
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }

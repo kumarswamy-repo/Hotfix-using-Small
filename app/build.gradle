@@ -11,9 +11,19 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+    // Signing
+    signingConfigs {
+        release {
+            storeFile file('../sign/release.jks')
+            storePassword "g@mes24x7"
+            keyAlias "rummycircle.com"
+            keyPassword "g@mes24x7"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
