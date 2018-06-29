@@ -15,12 +15,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import com.kumar.appupdatedemo.BuildConfig;
+import com.kumar.appupdatedemo.BundlesConfig;
+import com.kumar.appupdatedemo.Constants;
 import com.kumar.appupdatedemo.R;
 
 import net.wequick.small.Small;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,10 +31,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 import data.WelcomeMsgRepositoryImpl;
 import domain.WelcomeMsgUsecase;
@@ -43,6 +48,7 @@ import domain.WelcomeMsgUsecase;
 public class MainActivity extends AppCompatActivity {
     TextView welocomeText = null;
     private final int PERMISSIONS_REQUEST_STORAGE = 100;
+    private BundlesConfig mBundlesConfig = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -61,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                 Small.setUp(MainActivity.this, new Small.OnCompleteListener() {
                     @Override
                     public void onComplete() {
-                        Small.openUri("login",MainActivity.this);
+                        Small.openUri("login", MainActivity.this);
                     }
                 });
             }
@@ -73,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
                 Small.setUp(MainActivity.this, new Small.OnCompleteListener() {
                     @Override
                     public void onComplete() {
-                        Small.openUri("signup",MainActivity.this);
+                        Small.openUri("signup", MainActivity.this);
                     }
                 });
             }
@@ -82,11 +88,10 @@ public class MainActivity extends AppCompatActivity {
         updateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED &&
-                        ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED){
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     upgradeApp();
-                }
-                else {
+                } else {
                     ActivityCompat.requestPermissions(MainActivity.this,
                             new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                             PERMISSIONS_REQUEST_STORAGE);
@@ -96,12 +101,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TextView version = findViewById(R.id.id_version);
-        version.setText("version:"+ BuildConfig.VERSION_NAME);
+        version.setText("version:" + BuildConfig.VERSION_NAME);
 
         getMessage();
     }
 
-    private void getMessage(){
+    private void getMessage() {
         WelcomeMsgRepositoryImpl welcomeMsgRepository = new WelcomeMsgRepositoryImpl();
         WelcomeMsgUsecase welcomeMsgUsecase = new WelcomeMsgUsecase(welcomeMsgRepository);
         welocomeText.setText(welcomeMsgUsecase.getWelcomeMessage());
@@ -110,185 +115,142 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode){
-            case PERMISSIONS_REQUEST_STORAGE:{
-                if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     upgradeApp();
-                }
-                else
-                {
-                    Toast.makeText(MainActivity.this, "Enable storage permission to update App", Toast.LENGTH_SHORT ).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "Enable storage permission to update App", Toast.LENGTH_SHORT).show();
                 }
                 break;
             }
         }
     }
 
-    private void upgradeApp(){
+    private void upgradeApp() {
         new Thread(new Runnable() {
             @Override
             public void run() {
 
-//                        {
-//                            "version": "1.0.0",
-//                                "bundles": [
-//                            {
-//                                "uri": "main",
-//                                    "pkg": "com.example.appmain"
-//                            },
-//                            {
-//                                "uri": "kumar",
-//                                    "pkg": "com.example.appkumar"
-//                            },
-//                            {
-//                                "pkg" : "com.example.libstyle"
-//                            }
-//  ]
-//                        }
-
-//                File updateDir = new File(Environment.getExternalStorageDirectory()+File.separator+"Update Folder");
-//                if(!updateDir.exists())
-//                    return;
-//
-//                File patchFiles[] = updateDir.listFiles(new FilenameFilter() {
-//                    @Override
-//                    public boolean accept(File file, String s) {
-//                        String fileName = file.getName();
-//                        if(fileName.startsWith("libcom_kumar") && fileName.endsWith(".so"))
-//                            return true;
-//                        return false;
-//                    }
-//                });
-//
-//                if(patchFiles.length == 0)
-//                    return;
-
-                JSONObject jsonObject = new JSONObject();
-                try {
-                    jsonObject.put("version","1.0.0");
-                    JSONArray jsonArray = new JSONArray();
-                    JSONObject jsonObject1 = new JSONObject();
-                    jsonObject1.put("uri","login");
-                    jsonObject1.put("pkg","com.kumar.applogin");
-                    JSONObject jsonObject2 = new JSONObject();
-                    jsonObject2.put("uri","signup");
-                    jsonObject2.put("pkg","com.kumar.appsignup");
-                    jsonArray.put(0,jsonObject1);
-                    jsonArray.put(1,jsonObject2);
-
-                    jsonObject.put("bundles",jsonArray);
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                if (!Small.updateManifest(jsonObject, false)) {
-                    System.out.println("maifest update failed returning...");
-                    return;
-                }
-
-
-
-
-
-                net.wequick.small.Bundle bundle = Small.getBundle("com.kumar.applogin");
-                int versionCode = bundle.getVersionCode();
-                File parentFolder = bundle.getPatchFile().getParentFile();
-                File file = new File(parentFolder,"update_libcom_kumar_applogin.so");
-
-                if(file.exists())
-                {
-                    file.delete();
-                    try {
-                        file.createNewFile();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                File updateDir = new File(Environment.getExternalStorageDirectory() + File.separator + "Update Folder");
+                if (!updateDir.exists()) {
+                    boolean isCreated = updateDir.mkdir();
+                    if (!isCreated)
                         return;
-                    }
                 }
-                File updateFolder = new File(Environment.getExternalStorageDirectory()+File.separator+"Update Folder");
-                if(!updateFolder.exists())
-                    updateFolder.mkdir();
 
-                File inputFile = new File(updateFolder, "libcom_kumar_applogin.so");
-                if(!inputFile.exists())
+                File patchFiles[] = updateDir.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File file, String s) {
+                        return s.startsWith(Constants.LIB_PREFIX) && s.endsWith(Constants.SO_EXT);
+                    }
+                });
+
+                if (patchFiles.length == 0)
                     return;
-                InputStream is = null;
-                OutputStream os = null;
-                try {
-                    is = new FileInputStream(inputFile);
-                    os = new FileOutputStream(file);
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = is.read(buffer)) != -1) {
-                        os.write(buffer, 0, length);
-                    }
-                    os.flush();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                finally {
+
+                File bundleFile = new File(updateDir, Constants.BUNDLE_FILE);
+                if (bundleFile.exists()) {
                     try {
-                        if(os!=null)
-                            os.close();
-                    } catch (IOException e) {
+                        Gson gson = new Gson();
+                        JsonReader reader = new JsonReader(new FileReader(bundleFile));
+                        mBundlesConfig = gson.fromJson(reader, BundlesConfig.class);
+                        if (mBundlesConfig != null) {
+                            JSONObject manifestObject = new JSONObject(gson.toJson(mBundlesConfig));
+                            if (!Small.updateManifest(manifestObject, false)) {
+                                System.out.println("maifest update failed returning...");
+                                return;
+                            }
+                        }
+
+                    } catch (FileNotFoundException e) {
                         e.printStackTrace();
-                    }
-                    try {
-                        if(is!=null)
-                            is.close();
-                    } catch (IOException e) {
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
 
-//                SharedPreferences Settings = getSharedPreferences("AppUpgrade", Context.MODE_PRIVATE);
-//                SharedPreferences.Editor editor = Settings.edit();
-//                editor.putBoolean("app_main",true);
-//                editor.commit();
-
-                // Upgrade
-//                bundle.upgrade();
+                for(File patchFile:patchFiles){
+                    String packageName = getPackageNameFromPatchFile(patchFile.getName());
+                    net.wequick.small.Bundle bundle = Small.getBundle(packageName);
+                    File patchesFolder = bundle.getPatchFile().getParentFile();
+                    File destPatchFile = new File(patchesFolder,Constants.UPDATE_FILE_PREFIX+patchFile.getName());
+                    copyPatchFile(patchFile, destPatchFile);
+                }
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(MainActivity.this,"update is done",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "update is done", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
         }).start();
     }
 
+    private void copyPatchFile(File srcFile, File destFile){
+        InputStream is = null;
+        OutputStream os = null;
+        try {
+            is = new FileInputStream(srcFile);
+            os = new FileOutputStream(destFile);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                os.write(buffer, 0, length);
+            }
+            os.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (os != null)
+                    os.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (is != null)
+                    is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode){
-            case KeyEvent.KEYCODE_BACK:{
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK: {
 
-                if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED &&
-                        ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED){
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
 
-                    net.wequick.small.Bundle bundle = Small.getBundle("com.kumar.applogin");
-                    File parentFolder = bundle.getPatchFile().getParentFile();
-                    File file = new File(parentFolder,"update_libcom_kumar_applogin.so");
+                    List<net.wequick.small.Bundle> bundles = Small.getBundles();
+                    for(net.wequick.small.Bundle bundle:bundles){
+                        File bundleFile = bundle.getPatchFile();
+                        File patchFolder = bundleFile.getParentFile();
+                        File patchFile = new File(patchFolder, Constants.UPDATE_FILE_PREFIX + bundleFile.getName());
+                        if(patchFile.exists()){
+                            boolean isRenamed = patchFile.renameTo(bundleFile);
+                            if (isRenamed) {
+                                bundle.upgrade();
+                                Log.e("app:MainActiivty", "patch applied for "+bundleFile.getName());
+                            }
 
-                    if(file.exists())
-                    {
-                        File destFile = new File(parentFolder,"libcom_kumar_applogin.so");
-                        boolean isRenamed = file.renameTo(destFile);
-                        if(isRenamed) {
-                            bundle.upgrade();
-                            Log.e("app:MainActiivty", "patch applied for applogin.so");
+                            patchFile = new File(patchFolder, Constants.UPDATE_FILE_PREFIX + bundleFile.getName());
+                            patchFile.deleteOnExit();
                         }
-                        file = new File(parentFolder,"update_libcom_kumar_applogin.so");
-                        file.deleteOnExit();
                     }
-
                 }
             }
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private String getPackageNameFromPatchFile(String patchFileName){
+        return patchFileName.replaceFirst("lib","").replace(Constants.SO_EXT,"").replace("_",".");
     }
 }

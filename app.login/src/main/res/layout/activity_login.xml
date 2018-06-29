@@ -15,7 +15,7 @@
         android:id="@+id/singup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Singup"
+        android:text="Go to Singup"
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/welcome_msg"/>
 

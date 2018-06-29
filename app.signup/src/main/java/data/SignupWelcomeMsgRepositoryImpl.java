@@ -7,7 +7,7 @@ import domain.SignupWelcomeMsgRepository;
  */
 
 public class SignupWelcomeMsgRepositoryImpl implements SignupWelcomeMsgRepository {
-    private String message = "Signup Page!!!";
+    private String message = "Signup to Page!!!!!";
     @Override
     public String getWelcomeMsg() {
         return message;

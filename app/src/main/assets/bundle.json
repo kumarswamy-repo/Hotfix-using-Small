@@ -4,12 +4,14 @@
     {
       "uri": "login",
       "type": "app",
-      "pkg": "com.kumar.applogin"
+      "pkg": "com.kumar.applogin",
+      "version" : 1
     },
     {
       "uri": "signup",
       "type": "app",
-      "pkg": "com.kumar.appsignup"
+      "pkg": "com.kumar.appsignup",
+      "version" : 1
     }
   ]
 }
